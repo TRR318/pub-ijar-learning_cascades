@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from experiments.experiment_utils import get_loss, from_scorevec
 
-LOOKAHEAD = 2
+LOOKAHEAD = [1, 2]
 scoreset = [0, 1]
 
 if __name__ == "__main__":
@@ -71,20 +71,21 @@ if __name__ == "__main__":
         print("drawing edges")
         nx.draw_networkx_edges(G, pos, edge_color="#000000", ax=ax, width=0.5, node_size=10, alpha=.1)
 
-        # highlight cascade
-        print("fitting cascade")
-        psl = ProbabilisticScoringList(score_set=set(scoreset) - {0},
-                                       stage_loss=loss,
-                                       lookahead=LOOKAHEAD).fit(X, y)
-        cascade = [(i, perf(y, clf.predict_proba(X)[:, 1]))
-                   for i, clf in enumerate(psl.stage_clfs)]
+        for l, c in zip(LOOKAHEAD, ["#0173b2", "#de8f05"]):
+            # highlight cascade
+            print("fitting cascade")
+            psl = ProbabilisticScoringList(score_set=set(scoreset) - {0},
+                                           stage_loss=loss,
+                                           lookahead=l).fit(X, y)
+            cascade = [(i, perf(y, clf.predict_proba(X)[:, 1]))
+                       for i, clf in enumerate(psl.stage_clfs)]
 
-        G = nx.Graph()
-        for u, v in zip(cascade, cascade[1:]):
-            G.add_edge(u, v)
-        print("drawing cascade")
-        nx.draw_networkx_nodes(G, pos, node_color="#1f78b4", node_size=50, ax=ax)
-        nx.draw_networkx_edges(G, pos, edge_color="#1f78b4", ax=ax, width=1, node_size=10)
+            G = nx.Graph()
+            for u, v in zip(cascade, cascade[1:]):
+                G.add_edge(u, v)
+            print("drawing cascade")
+            nx.draw_networkx_nodes(G, pos, node_color=c, node_size=50, ax=ax)
+            nx.draw_networkx_edges(G, pos, edge_color=c, ax=ax, width=1, node_size=10, label=f"Lookahead $l={l}$")
 
         # plt.box(False)
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
@@ -93,6 +94,7 @@ if __name__ == "__main__":
 
         print("generating file")
         code = f"local{opt}_globalSUM_metr{meas}"
+        fig.legend(bbox_to_anchor=(.9, .35))
         fig.suptitle(dataset.title())
         fig.savefig(f"../fig/{dataset}_{code}.pdf", bbox_inches="tight")
         # fig.savefig(f"../../fig/{dataset}_{code}.png", dpi=300)
