@@ -126,7 +126,7 @@ def worker(params):
             for k, stage in enumerate(psl.stage_clfs):
                 # evaluate psl
                 y_pred = {sample: stage.predict(X_[sample]) for sample in ["train", "test"]}
-                y_proba = {sample: stage.predict_proba(X_[sample]) for sample in ["train", "test"]}
+                y_proba = {sample: stage.predict_proba(X_[sample])[:, 1] for sample in ["train", "test"]}
 
                 results.append(key | dict(method=variant,
                                           stage=k,
@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
     grid = list(filter(is_unprocessed, product(range(N_SPLITS), dataset_names, score_sets)))
 
-    with Pool(8) as p:
+    with Pool(12) as p:
         pbar = tqdm(p.imap_unordered(worker, grid), total=len(grid))
         for results in pbar:
             result = results[0]

@@ -40,7 +40,11 @@ def evaluate_metrics(
 
     y_preds = dict(y_pred=y_pred)
     if y_prob is not None:
-        y_preds["y_bal"] = {sample: y_prob[sample][:, 1] > wpos for sample in ["train", "test"]}
+        y_preds["y_bal"] = {sample: y_prob[sample] > wpos for sample in ["train", "test"]}
+        _, thresh = precision_at_recall_k_score(y_["train"], y_prob["train"],
+                                                recall_level=cp_thresh,
+                                                return_threshold=True)
+        y_preds["cp"] = {sample: y_prob[sample] >= thresh for sample in ["train", "test"]}
 
         cp = partial(precision_at_recall_k_score, recall_level=cp_thresh)
         cp.__name__ = "constrained_precision"
@@ -49,28 +53,30 @@ def evaluate_metrics(
         ee.__name__ = "expected_entropy"
 
         result |= {
-            f"{metric.__name__}_{sample}": metric(y_[sample], y_prob[sample][:, 1])
+            f"{metric.__name__}_{sample}": metric(y_[sample], y_prob[sample])
             for metric in [brier_score_loss, roc_auc_score, cp, ee]
             for sample in ["train", "test"]
         }
 
-    prec = partial(precision_score, zero_division=np.nan)
+    prec = partial(precision_score, zero_division=0)
     prec.__name__ = "precision_score"
 
     result |= {
         f"{metric.__name__}_{rounding_type}_{sample}": metric(y_[sample], discrete_preds[sample])
-        for metric in [accuracy_score, f1_score, prec, recall_score, balanced_accuracy_score]
+        for metric in [accuracy_score, balanced_accuracy_score, prec, recall_score, f1_score]
         for rounding_type, discrete_preds in y_preds.items()
         for sample in ["train", "test"]
     }
     return result
 
 
-def get_loss(name, wpos=None, recall_level=.9):
+def get_loss(name, wpos=None, recall_level=None):
     match (name):
         case "expected_entropy" | "EE":
             return None
         case "constrained_precision" | "CP":
+            if recall_level is None:
+                raise ValueError("recall_level must be set for precision at recall")
             return lambda y_true, y_prob: -precision_at_recall_k_score(y_true, y_prob, recall_level=recall_level)
         case "balanced_accuracy" | "BACC":
             if wpos is None:
