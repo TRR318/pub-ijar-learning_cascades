@@ -71,7 +71,7 @@ if __name__ == "__main__":
         print("drawing edges")
         nx.draw_networkx_edges(G, pos, edge_color="#000000", ax=ax, width=0.5, node_size=10, alpha=.1)
 
-        for l, c in zip(LOOKAHEAD, ["#0173b2", "#de8f05"]):
+        for l, c in zip(LOOKAHEAD, ["#de8f05", "#0173b2"]):
             # highlight cascade
             print("fitting cascade")
             psl = ProbabilisticScoringList(score_set=set(scoreset) - {0},
