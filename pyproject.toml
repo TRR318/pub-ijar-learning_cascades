@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pub-ijar-learning_cascades"
-version = "1.1.0"
+version = "1.2.0"
 description = ""
 authors = ["Jonas Hanselle <jonas.hanselle@ifi.lmu.de>", "Stefan Heid <stefan.heid@ifi.lmu.de>"]
 readme = "README.md"
